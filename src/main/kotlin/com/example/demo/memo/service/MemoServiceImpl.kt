@@ -1,13 +1,19 @@
 package com.example.demo.memo.service
 
+import com.example.demo.memo.controller.MemoController
 import com.example.demo.memo.controller.dtos.MemoDeletedResDto
 import com.example.demo.memo.controller.dtos.MemoDto
+import com.example.demo.memo.controller.dtos.MemoResource
 import com.example.demo.memo.controller.dtos.MemoResponseDto
 import com.example.demo.memo.model.Memo
 import com.example.demo.memo.repository.MemoRepository
-import javassist.NotFoundException
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+import org.springframework.data.web.PagedResourcesAssembler
+import org.springframework.hateoas.EntityModel
+import org.springframework.hateoas.PagedModel
+import org.springframework.hateoas.server.RepresentationModelAssembler
+import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo
 import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -20,7 +26,7 @@ class MemoServiceImpl(
     private val memoRepository: MemoRepository
 ) : MemoService
 {
-    override fun createMemo(memoDto: MemoDto): ResponseEntity<MemoResponseDto> {
+    override fun createMemo(memoDto: MemoDto): ResponseEntity<EntityModel<MemoResponseDto>> {
         val created = memoRepository.save(
             Memo(
                 title = memoDto.title,
@@ -28,11 +34,13 @@ class MemoServiceImpl(
                 createdAt = LocalDateTime.now()
             )
         )
-
-        return ResponseEntity.ok(MemoResponseDto(created.id, created.title, created.text, created.createdAt, created.updatedAt))
+        val resource = createMemoResource(created)
+        val toUri = linkTo(MemoController::class.java).slash(resource.content?.id).toUri()
+        return ResponseEntity.created(toUri).body(resource)
     }
 
-    override fun updateMemo(id: Long, memoDto: MemoDto): ResponseEntity<MemoResponseDto> {
+
+    override fun updateMemo(id: Long, memoDto: MemoDto): ResponseEntity<EntityModel<MemoResponseDto>> {
         val found = memoRepository.findById(id)
         if (found.isPresent) {
             val memo = found.get()
@@ -40,9 +48,9 @@ class MemoServiceImpl(
             memo.title = memoDto.title
             memo.updatedAt = LocalDateTime.now()
             val saved = memoRepository.save(memo)
-            return ResponseEntity.ok(MemoResponseDto(
-                saved.id,saved.title,saved.text,saved.createdAt,saved.updatedAt
-            ))
+
+            val resource = createMemoResource(saved)
+            return ResponseEntity.ok(resource)
         } else {
             return ResponseEntity.notFound().build()
         }
@@ -59,20 +67,45 @@ class MemoServiceImpl(
         }
     }
 
-    override fun getMemo(id: Long): ResponseEntity<MemoResponseDto> {
+    override fun getMemo(id: Long): ResponseEntity<EntityModel<MemoResponseDto>> {
         val found = memoRepository.findById(id)
         if (found.isPresent) {
             val get = found.get()
-            return ResponseEntity.ok(MemoResponseDto(get.id,get.title,get.text,get.createdAt,get.updatedAt))
+            val resource = createMemoResource(get)
+            return ResponseEntity.ok(resource)
+
         } else {
             return ResponseEntity.notFound().build()
         }
     }
 
-    override fun queryMemos(date: LocalDate, pageable: Pageable): ResponseEntity<Page<Memo>> {
+    override fun queryMemos(date: LocalDate, pageable: Pageable, assembler: PagedResourcesAssembler<Memo>): PagedModel<EntityModel<MemoResponseDto>> {
         var from:LocalDateTime =date.atStartOfDay()
         var to:LocalDateTime =from.plusDays(1)
         var memos:Page<Memo> = memoRepository.findByCreatedAtBetween(from,to,pageable)
-        return ResponseEntity.ok(memos)
+
+        return assembler.toModel(memos) { m: Memo -> MemoResource.modelOf(createMemoResponseDto(m)) }
+    }
+
+    fun createMemoResource(memo: Memo): EntityModel<MemoResponseDto> {
+        val memoResponseDto = MemoResponseDto(
+            id = memo.id,
+            title = memo.title,
+            text = memo.text,
+            createdAt = memo.createdAt,
+            updatedAt = memo.updatedAt
+        )
+        return MemoResource.modelOf(memoResponseDto)
+    }
+
+    fun createMemoResponseDto(memo: Memo):MemoResponseDto {
+        val memoResponseDto = MemoResponseDto(
+            id = memo.id,
+            title = memo.title,
+            text = memo.text,
+            createdAt = memo.createdAt,
+            updatedAt = memo.updatedAt
+        )
+        return memoResponseDto
     }
 }
