@@ -51,10 +51,13 @@ class ServiceTest {
         val findById = memoRepository.findById(1)
         //then
         assertThat(createMemo.body?.content?.id).isEqualTo(findById.get().id)
+        assertThat(createMemo.body?.content?.id).isEqualTo(memo.id)
+
         assertThat(createMemo.body?.content?.title).isEqualTo(findById.get().title)
+        assertThat(createMemo.body?.content?.title).isEqualTo(memo.title)
+
         assertThat(createMemo.body?.content?.text).isEqualTo(findById.get().text)
-        assertThat(createMemo.body?.content?.createdAt).isEqualTo(findById.get().createdAt)
-        assertThat(createMemo.body?.content?.updatedAt).isEqualTo(findById.get().updatedAt)
+        assertThat(createMemo.body?.content?.text).isEqualTo(memo.text)
     }
     private fun returnOptionalMemo(memo:Memo): Optional<Memo> {
         return Optional.of(memo)
