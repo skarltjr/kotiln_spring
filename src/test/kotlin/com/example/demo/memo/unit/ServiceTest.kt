@@ -11,8 +11,18 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.*
 import org.mockito.BDDMockito.*
 import org.mockito.junit.jupiter.MockitoExtension
+import org.springframework.data.domain.*
+import org.springframework.data.web.HateoasPageableHandlerMethodArgumentResolver
+import org.springframework.data.web.PagedResourcesAssembler
+import org.springframework.lang.Nullable
+import org.springframework.web.util.UriComponents
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*
+import org.springframework.web.util.UriComponentsBuilder
+
+
+
 
 
 @ExtendWith(MockitoExtension::class)
@@ -120,7 +130,50 @@ class ServiceTest {
         Mockito.verify(memoService, times(1)).getMemo(ArgumentMatchers.eq(memo.id!!))
 
     }
-    
+
+    @Test
+    @DisplayName("queryMemos")
+    fun queryMemos() {
+        var memos: Page<Memo> = generateMemos()
+        var from:LocalDateTime = LocalDate.now().atStartOfDay()
+        var to:LocalDateTime = from.plusDays(1)
+        val pageable: Pageable = PageRequest.of(0, 5, Sort.by("createdAt").descending())
+        given(memoRepository.findByCreatedAtBetween(from,to,pageable)).willReturn(memos)
+
+        var date:LocalDate = LocalDate.now()
+
+        val resolver: HateoasPageableHandlerMethodArgumentResolver = HateoasPageableHandlerMethodArgumentResolver()
+        val baseUri = UriComponentsBuilder.fromUriString("http://localhost:8080").build()
+        var assembler:PagedResourcesAssembler<Memo> = PagedResourcesAssembler<Memo>(resolver,baseUri)
+
+        val result = memoService.queryMemos(date, pageable, assembler)
+
+        assertThat(result.content.size).isEqualTo(5)
+        val toMutableSet = result.content.toMutableSet()
+
+        var index = 1
+        for (x in toMutableSet) {
+            x.content?.id = index.toLong()
+            index++
+        }
+        assertThat(toMutableSet)
+    }
+
+    private fun generateMemos(): Page<Memo> {
+        var list: MutableList<Memo> = mutableListOf()
+        for (i in 1..5 step (1)) {
+            val memo = Memo(
+                id = i.toLong(),
+                title = "title ${i}",
+                text = "text ${i}",
+                createdAt = LocalDateTime.now(),
+                updatedAt = null
+            )
+            list.add(memo)
+        }
+        return PageImpl<Memo>(list)
+    }
+
     private fun createTempMemo():Memo {
         val memoDto = MemoDto(
             title = "test",
