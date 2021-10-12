@@ -80,7 +80,7 @@ class ServiceTest {
             id = 1L,
             title = updateDto.title,
             text = updateDto.text,
-            createdAt = LocalDateTime.now().minusDays(1),
+            createdAt = memo.createdAt,
             updatedAt = LocalDateTime.now()
         )
 
