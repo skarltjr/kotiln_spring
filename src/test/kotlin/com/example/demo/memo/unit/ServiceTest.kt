@@ -8,11 +8,8 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.mockito.BDDMockito
-import org.mockito.BDDMockito.given
-import org.mockito.InjectMocks
-import org.mockito.Mock
-import org.mockito.Spy
+import org.mockito.*
+import org.mockito.BDDMockito.*
 import org.mockito.junit.jupiter.MockitoExtension
 import java.time.LocalDateTime
 import java.util.*
@@ -58,6 +55,71 @@ class ServiceTest {
 
         assertThat(createMemo.body?.content?.text).isEqualTo(findById.get().text)
         assertThat(createMemo.body?.content?.text).isEqualTo(memo.text)
+    }
+
+
+    @Test
+    @DisplayName("updateMemo")
+    fun updateMemo() {
+        val memoDto = MemoDto(
+            title = "test",
+            text = "test"
+        )
+        val memo = Memo(
+            id = 1L,
+            title = memoDto.title,
+            text = memoDto.text,
+            createdAt = LocalDateTime.now().minusDays(1),
+            updatedAt = null
+        )
+        val updateDto = MemoDto(
+            title = "update",
+            text = "update"
+        )
+        val updatedMemo = Memo(
+            id = 1L,
+            title = updateDto.title,
+            text = updateDto.text,
+            createdAt = LocalDateTime.now().minusDays(1),
+            updatedAt = LocalDateTime.now()
+        )
+
+//        given(memoRepository.save(BDDMockito.eq(memo))).willReturn(memo)
+        given(memoRepository.findById(1)).willReturn(returnOptionalMemo(memo)) // find에 대해
+        given(memoRepository.save(BDDMockito.any())).willReturn(updatedMemo)
+
+
+        val updated = memoService.updateMemo(1, updateDto)
+
+        assertThat(updated.body?.content?.text).isEqualTo(updateDto.text)
+        assertThat(updated.body?.content?.title).isEqualTo(updateDto.title)
+        assertThat(updated.body?.content?.createdAt).isEqualTo(memo.createdAt)
+
+    }
+
+    @Test
+    @DisplayName("daleteMemo")
+    fun deleteMemo() {
+        val memoDto = MemoDto(
+            title = "test",
+            text = "test"
+        )
+        val memo = Memo(
+            id = 1L,
+            title = memoDto.title,
+            text = memoDto.text,
+            createdAt = LocalDateTime.now().minusDays(1),
+            updatedAt = null
+        )
+
+
+        given(memoRepository.findById(memo.id!!)).willReturn(returnOptionalMemo(memo)).willReturn(null) // find에 대해
+
+        memoService.deleteMemo(memo.id!!)
+
+
+        Mockito.verify(memoRepository, times(1)).findById(memo.id!!)
+        Mockito.verify(memoRepository).deleteById(memo.id!!)
     }
     private fun returnOptionalMemo(memo:Memo): Optional<Memo> {
         return Optional.of(memo)
