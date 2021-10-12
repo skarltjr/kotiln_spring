@@ -98,8 +98,30 @@ class ServiceTest {
     }
 
     @Test
-    @DisplayName("daleteMemo")
+    @DisplayName("deleteMemo")
     fun deleteMemo() {
+        val memo = createTempMemo()
+
+        given(memoRepository.findById(memo.id!!)).willReturn(returnOptionalMemo(memo))// find에 대해
+        memoService.deleteMemo(memo.id!!)
+
+        Mockito.verify(memoService, times(1)).deleteMemo(ArgumentMatchers.eq(memo.id)!!)
+    }
+
+    @Test
+    @DisplayName("getMemo")
+    fun getMemo() {
+        val memo = createTempMemo()
+
+        given(memoRepository.findById(memo.id!!)).willReturn(returnOptionalMemo(memo)) // find에 대해
+        val found = memoService.getMemo(memo.id!!)
+
+        assertThat(found.body?.content?.id).isEqualTo(memo.id)
+        Mockito.verify(memoService, times(1)).getMemo(ArgumentMatchers.eq(memo.id!!))
+
+    }
+    
+    private fun createTempMemo():Memo {
         val memoDto = MemoDto(
             title = "test",
             text = "test"
@@ -111,15 +133,7 @@ class ServiceTest {
             createdAt = LocalDateTime.now().minusDays(1),
             updatedAt = null
         )
-
-
-        given(memoRepository.findById(memo.id!!)).willReturn(returnOptionalMemo(memo)).willReturn(null) // find에 대해
-
-        memoService.deleteMemo(memo.id!!)
-
-
-        Mockito.verify(memoRepository, times(1)).findById(memo.id!!)
-        Mockito.verify(memoRepository).deleteById(memo.id!!)
+        return memo
     }
     private fun returnOptionalMemo(memo:Memo): Optional<Memo> {
         return Optional.of(memo)
