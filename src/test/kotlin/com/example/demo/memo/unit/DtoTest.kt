@@ -2,7 +2,8 @@ package com.example.demo.memo.unit
 
 import com.example.demo.memo.controller.dtos.MemoDto
 import com.example.demo.memo.controller.dtos.MemoResource
-import com.example.demo.memo.controller.dtos.MemoResponseDto
+import com.example.demo.memo.controller.dtos.MemoResponse
+import com.example.demo.memo.model.Memo
 import org.assertj.core.api.Assertions.*
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -30,31 +31,35 @@ class DtoTest {
     @DisplayName("MemoResponseDto")
     fun checkMemoResponseDto() {
         //given
-        var id:Long = 1
-        var title: String = "test"
-        var text: String = "test"
-        var createdAt:LocalDateTime = LocalDateTime.now()
-        var updatedAt:LocalDateTime = LocalDateTime.now()
+        val memo = Memo(
+            id = 1,
+            title = "test",
+            text = "test",
+            createdAt = LocalDateTime.now(),
+            updatedAt = LocalDateTime.now()
+        )
         //when
-        val result = MemoResponseDto(id, title, text, createdAt, updatedAt)
+        val result = MemoResponse(memo)
         //then
-        assertThat(result.id).isEqualTo(id)
-        assertThat(result.title).isEqualTo(title)
-        assertThat(result.text).isEqualTo(text)
-        assertThat(result.createdAt).isEqualTo(createdAt)
-        assertThat(result.updatedAt).isEqualTo(updatedAt)
+        assertThat(result.memo.id).isEqualTo(memo.id)
+        assertThat(result.memo.title).isEqualTo(memo.title)
+        assertThat(result.memo.text).isEqualTo(memo.text)
+        assertThat(result.memo.createdAt).isEqualTo(memo.createdAt)
+        assertThat(result.memo.updatedAt).isEqualTo(memo.updatedAt)
     }
 
     @Test
     @DisplayName("MemoResource")
     fun checkMemoResource() {
         //given
-        var id:Long = 1
-        var title: String = "test"
-        var text: String = "test"
-        var createdAt:LocalDateTime = LocalDateTime.now()
-        var updatedAt:LocalDateTime = LocalDateTime.now()
-        val result = MemoResponseDto(id, title, text, createdAt, updatedAt)
+        val memo = Memo(
+            id = 1,
+            title = "test",
+            text = "test",
+            createdAt = LocalDateTime.now(),
+            updatedAt = LocalDateTime.now()
+        )
+        val result = MemoResponse(memo)
 
         //when
         val resource = MemoResource.modelOf(result)

@@ -14,8 +14,6 @@ import org.mockito.junit.jupiter.MockitoExtension
 import org.springframework.data.domain.*
 import org.springframework.data.web.HateoasPageableHandlerMethodArgumentResolver
 import org.springframework.data.web.PagedResourcesAssembler
-import org.springframework.lang.Nullable
-import org.springframework.web.util.UriComponents
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*
@@ -57,14 +55,14 @@ class ServiceTest {
         val createMemo = memoService.createMemo(memoDto)
         val findById = memoRepository.findById(1)
         //then
-        assertThat(createMemo.body?.content?.id).isEqualTo(findById.get().id)
-        assertThat(createMemo.body?.content?.id).isEqualTo(memo.id)
+        assertThat(createMemo.body?.content?.memo?.id).isEqualTo(findById.get().id)
+        assertThat(createMemo.body?.content?.memo?.id).isEqualTo(memo.id)
 
-        assertThat(createMemo.body?.content?.title).isEqualTo(findById.get().title)
-        assertThat(createMemo.body?.content?.title).isEqualTo(memo.title)
+        assertThat(createMemo.body?.content?.memo?.title).isEqualTo(findById.get().title)
+        assertThat(createMemo.body?.content?.memo?.title).isEqualTo(memo.title)
 
-        assertThat(createMemo.body?.content?.text).isEqualTo(findById.get().text)
-        assertThat(createMemo.body?.content?.text).isEqualTo(memo.text)
+        assertThat(createMemo.body?.content?.memo?.text).isEqualTo(findById.get().text)
+        assertThat(createMemo.body?.content?.memo?.text).isEqualTo(memo.text)
     }
 
 
@@ -76,7 +74,7 @@ class ServiceTest {
             text = "test"
         )
         val memo = Memo(
-            id = 1L,
+            id = 1,
             title = memoDto.title,
             text = memoDto.text,
             createdAt = LocalDateTime.now().minusDays(1),
@@ -87,23 +85,24 @@ class ServiceTest {
             text = "update"
         )
         val updatedMemo = Memo(
-            id = 1L,
+            id = 1,
             title = updateDto.title,
             text = updateDto.text,
             createdAt = memo.createdAt,
             updatedAt = LocalDateTime.now()
         )
 
-//        given(memoRepository.save(BDDMockito.eq(memo))).willReturn(memo)
+
+        given(memoRepository.existsById(1)).willReturn(true)
         given(memoRepository.findById(1)).willReturn(returnOptionalMemo(memo)) // find에 대해
         given(memoRepository.save(BDDMockito.any())).willReturn(updatedMemo)
 
 
         val updated = memoService.updateMemo(1, updateDto)
 
-        assertThat(updated.body?.content?.text).isEqualTo(updateDto.text)
-        assertThat(updated.body?.content?.title).isEqualTo(updateDto.title)
-        assertThat(updated.body?.content?.createdAt).isEqualTo(memo.createdAt)
+        assertThat(updated.body?.content?.memo?.text).isEqualTo(updateDto.text)
+        assertThat(updated.body?.content?.memo?.title).isEqualTo(updateDto.title)
+        assertThat(updated.body?.content?.memo?.createdAt).isEqualTo(memo.createdAt)
 
     }
 
@@ -112,7 +111,7 @@ class ServiceTest {
     fun deleteMemo() {
         val memo = createTempMemo()
 
-        given(memoRepository.findById(memo.id!!)).willReturn(returnOptionalMemo(memo))// find에 대해
+        given(memoRepository.existsById(memo.id!!)).willReturn(true)
         memoService.deleteMemo(memo.id!!)
 
         Mockito.verify(memoService, times(1)).deleteMemo(ArgumentMatchers.eq(memo.id)!!)
@@ -123,10 +122,11 @@ class ServiceTest {
     fun getMemo() {
         val memo = createTempMemo()
 
+        given(memoRepository.existsById(memo.id!!)).willReturn(true)
         given(memoRepository.findById(memo.id!!)).willReturn(returnOptionalMemo(memo)) // find에 대해
         val found = memoService.getMemo(memo.id!!)
 
-        assertThat(found.body?.content?.id).isEqualTo(memo.id)
+        assertThat(found.body?.content?.memo?.id).isEqualTo(memo.id)
         Mockito.verify(memoService, times(1)).getMemo(ArgumentMatchers.eq(memo.id!!))
 
     }
@@ -153,7 +153,7 @@ class ServiceTest {
 
         var index = 1
         for (x in toMutableSet) {
-            x.content?.id = index.toLong()
+            x.content?.memo?.id = index.toLong()
             index++
         }
         assertThat(toMutableSet)
@@ -180,7 +180,7 @@ class ServiceTest {
             text = "test"
         )
         val memo = Memo(
-            id = 1L,
+            id = 1,
             title = memoDto.title,
             text = memoDto.text,
             createdAt = LocalDateTime.now().minusDays(1),

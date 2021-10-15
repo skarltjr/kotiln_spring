@@ -46,8 +46,47 @@ class IntegrationTest() {
             .accept(MediaTypes.HAL_JSON)
             .content(mapper.writeValueAsString(createMemoDto())))
             .andExpect(status().isCreated)
-            .andExpect(jsonPath("id").exists())
+            .andExpect(jsonPath("memo.id").exists())
     }
+
+    @Test
+    @DisplayName("메모 생성 실패 - null 값")
+    fun createMemoFailed() {
+        mockmvc.perform(post("/memos")
+            .contentType(MediaType.APPLICATION_JSON)
+            .accept(MediaTypes.HAL_JSON)
+            .content(mapper.writeValueAsString(null)))
+            .andExpect(status().isBadRequest)
+            .andExpect(jsonPath("message").value("wrong request body"))
+            .andExpect(jsonPath("_links.profile").exists())
+    }
+
+    @Test
+    @DisplayName("메모 생성 실패 - title 빈 값")
+    fun createMemoFailedWithWrongTitle() {
+        mockmvc.perform(post("/memos")
+            .contentType(MediaType.APPLICATION_JSON)
+            .accept(MediaTypes.HAL_JSON)
+            .content(mapper.writeValueAsString(createMemoDtoWithWrongValueTitle())))
+            .andExpect(status().isBadRequest)
+            .andExpect(jsonPath("errors[0].field").value("title"))
+            .andExpect(jsonPath("errors[0].defaultMessage").value("타이틀이 비어있는지 확인해주세요"))
+            .andExpect(jsonPath("_links.profile").exists())
+    }
+
+    @Test
+    @DisplayName("메모 생성 실패 - text 빈 값")
+    fun createMemoFailedWithWrongText() {
+        mockmvc.perform(post("/memos")
+            .contentType(MediaType.APPLICATION_JSON)
+            .accept(MediaTypes.HAL_JSON)
+            .content(mapper.writeValueAsString(createMemoDtoWithWrongValueText())))
+            .andExpect(status().isBadRequest)
+            .andExpect(jsonPath("errors[0].field").value("text"))
+            .andExpect(jsonPath("errors[0].defaultMessage").value("텍스트가 비어있는지 확인해주세요"))
+            .andExpect(jsonPath("_links.profile").exists())
+    }
+
 
     @Test
     @DisplayName("메모 수정")
@@ -58,16 +97,16 @@ class IntegrationTest() {
             .accept(MediaTypes.HAL_JSON)
             .content(mapper.writeValueAsString(memoDtoForUpdate())))
             .andExpect(status().isOk)
-            .andExpect(jsonPath("id").value(temp.id))
-            .andExpect(jsonPath("title").value("updated"))
-            .andExpect(jsonPath("text").value("updated"))
+            .andExpect(jsonPath("memo.id").value(temp.id))
+            .andExpect(jsonPath("memo.title").value("updated"))
+            .andExpect(jsonPath("memo.text").value("updated"))
     }
 
     @Test
     @DisplayName("메모 수정 실패 - not found ")
     fun failUpdateWith404() {
         val memo = createTempMemo()
-        var anotherId = 99
+        var anotherId = -1
         mockmvc.perform(
             patch("/memos/{id}", anotherId)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -76,7 +115,49 @@ class IntegrationTest() {
         )
             .andExpect(status().isNotFound)
     }
+    @Test
+    @DisplayName("메모 수정 실패 - null 값")
+    fun updateMemoFailedWithNull() {
+        val memo = createTempMemo()
+        var anotherId = -1
+        mockmvc.perform(patch("/memos/{id}",anotherId)
+            .contentType(MediaType.APPLICATION_JSON)
+            .accept(MediaTypes.HAL_JSON)
+            .content(mapper.writeValueAsString(null)))
+            .andExpect(status().isBadRequest)
+            .andExpect(jsonPath("message").value("wrong request body"))
+            .andExpect(jsonPath("_links.profile").exists())
+    }
 
+    @Test
+    @DisplayName("메모 수정 실패 - title 빈 값")
+    fun updateMemoFailedWithWrongTitle() {
+        val memo = createTempMemo()
+        var anotherId = -1
+        mockmvc.perform(patch("/memos/{id}",anotherId)
+            .contentType(MediaType.APPLICATION_JSON)
+            .accept(MediaTypes.HAL_JSON)
+            .content(mapper.writeValueAsString(createMemoDtoWithWrongValueTitle())))
+            .andExpect(status().isBadRequest)
+            .andExpect(jsonPath("errors[0].field").value("title"))
+            .andExpect(jsonPath("errors[0].defaultMessage").value("타이틀이 비어있는지 확인해주세요"))
+            .andExpect(jsonPath("_links.profile").exists())
+    }
+
+    @Test
+    @DisplayName("메모 수정 실패 - text 빈 값")
+    fun updateMemoFailedWithWrongText() {
+        val memo = createTempMemo()
+        var anotherId = -1
+        mockmvc.perform(patch("/memos/{id}",anotherId)
+            .contentType(MediaType.APPLICATION_JSON)
+            .accept(MediaTypes.HAL_JSON)
+            .content(mapper.writeValueAsString(createMemoDtoWithWrongValueText())))
+            .andExpect(status().isBadRequest)
+            .andExpect(jsonPath("errors[0].field").value("text"))
+            .andExpect(jsonPath("errors[0].defaultMessage").value("텍스트가 비어있는지 확인해주세요"))
+            .andExpect(jsonPath("_links.profile").exists())
+    }
     @Test
     @DisplayName("메모 삭제")
     fun removeMemo() {
@@ -89,7 +170,7 @@ class IntegrationTest() {
     @DisplayName("메모 삭제 - 실패")
     fun failToRemove() {
         val memo = createTempMemo()
-        var anotherId = 99
+        var anotherId = -1
         mockmvc.perform(delete("/memos/{id}", anotherId))
             .andExpect(status().isNotFound)
     }
@@ -100,16 +181,16 @@ class IntegrationTest() {
         val memo = createTempMemo()
         mockmvc.perform(get("/memos/{id}", memo.id))
             .andExpect(status().isOk)
-            .andExpect(jsonPath("id").value(memo.id))
-            .andExpect(jsonPath("title").value("title"))
-            .andExpect(jsonPath("text").value("text"))
+            .andExpect(jsonPath("memo.id").value(memo.id))
+            .andExpect(jsonPath("memo.title").value("title"))
+            .andExpect(jsonPath("memo.text").value("text"))
     }
 
     @Test
     @DisplayName("메모 단건 조회 - 실패")
     fun failToGetMemo() {
         val memo = createTempMemo()
-        var anotherId = 99
+        var anotherId = -1
         mockmvc.perform(get("/memos/{id}", anotherId))
             .andExpect(status().isNotFound)
     }
@@ -182,6 +263,12 @@ class IntegrationTest() {
 
     private fun createMemoDto(): MemoDto {
         return MemoDto(title = "title", text = "text")
+    }
+    private fun createMemoDtoWithWrongValueTitle(): MemoDto {
+        return MemoDto(title="",text="text")
+    }
+    private fun createMemoDtoWithWrongValueText(): MemoDto {
+        return MemoDto(title="title",text="")
     }
 
     private fun createTempMemo():Memo {
