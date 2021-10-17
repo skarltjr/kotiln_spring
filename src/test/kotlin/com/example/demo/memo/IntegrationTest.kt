@@ -25,7 +25,6 @@ import java.time.LocalDateTime
 @SpringBootTest
 @AutoConfigureMockMvc
 class IntegrationTest() {
-
     @Autowired
     lateinit var memoRepository: MemoRepository
     @Autowired
